@@ -68,7 +68,7 @@ const curvePath = new CurvePath();
 const initialPoints: Vector3[] = [
   new Vector3(-5, 0, -5),
   new Vector3(5, 0, -5),
-  new Vector3(5, 0, 5),
+  new Vector3(5, 2, 5),
   new Vector3(-5, 0, 5),
 ];
 
