@@ -92,6 +92,7 @@ outlinePass.edgeStrength = 3.0;
 outlinePass.edgeThickness = 1.0;
 outlinePass.edgeGlow = 0.0;
 outlinePass.usePatternTexture = true;
+outlinePass.pulsePeriod = 0.0;
 
 const outputPass = new OutputPass();
 
@@ -169,6 +170,15 @@ outlinePane.addBinding(outlinePass, 'edgeGlow', {
   max: 1.0,
   step: 0.01,
   label: 'Edge Glow',
+});
+outlinePane.addBinding(outlinePass, 'pulsePeriod', {
+  min: 0.0,
+  max: 5.0,
+  step: 0.01,
+  label: 'Pulse Period',
+});
+outlinePane.addBinding(outlinePass, 'usePatternTexture', {
+  label: 'Use Pattern Texture',
 });
 
 /**
