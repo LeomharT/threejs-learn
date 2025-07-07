@@ -8,6 +8,7 @@ import {
   MeshBasicMaterial,
   PerspectiveCamera,
   Raycaster,
+  RepeatWrapping,
   Scene,
   TextureLoader,
   Vector2,
@@ -82,10 +83,15 @@ fxaaPass.uniforms['resolution'].value.set(1 / sizes.width, 1 / sizes.height);
 
 const outlinePass = new OutlinePass(new Vector2(sizes.width, sizes.height), scene, camera);
 textureLoader.load('tri_pattern.jpg', (texture) => {
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+
   outlinePass.patternTexture = texture;
 });
 outlinePass.edgeStrength = 3.0;
 outlinePass.edgeThickness = 1.0;
+outlinePass.edgeGlow = 0.0;
+outlinePass.usePatternTexture = true;
 
 const outputPass = new OutputPass();
 
@@ -152,6 +158,18 @@ outlinePane.addBinding(outlinePass, 'edgeStrength', {
   step: 0.01,
   label: 'Edge Strength',
 });
+outlinePane.addBinding(outlinePass, 'edgeThickness', {
+  min: 1,
+  max: 5,
+  step: 0.01,
+  label: 'Edge Thickness',
+});
+outlinePane.addBinding(outlinePass, 'edgeGlow', {
+  min: 0.0,
+  max: 1.0,
+  step: 0.01,
+  label: 'Edge Glow',
+});
 
 /**
  * Events
@@ -177,7 +195,6 @@ function intersectMeshes() {
   }
 
   if (INTERSECTED) {
-    console.log(INTERSECTED);
     outlinePass.selectedObjects = [INTERSECTED];
   } else {
     // Always has selection
