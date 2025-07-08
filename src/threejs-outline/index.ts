@@ -91,7 +91,7 @@ textureLoader.load('tri_pattern.jpg', (texture) => {
 outlinePass.edgeStrength = 3.0;
 outlinePass.edgeThickness = 1.0;
 outlinePass.edgeGlow = 0.0;
-outlinePass.usePatternTexture = true;
+outlinePass.usePatternTexture = false;
 outlinePass.pulsePeriod = 0.0;
 
 const outputPass = new OutputPass();
@@ -203,13 +203,6 @@ function intersectMeshes() {
       INTERSECTED = undefined;
     }
   }
-
-  if (INTERSECTED) {
-    outlinePass.selectedObjects = [INTERSECTED];
-  } else {
-    // Always has selection
-    // outlinePass.selectedObjects = [];
-  }
 }
 
 addFrameLoop(intersectMeshes);
@@ -262,6 +255,8 @@ function resize() {
   composer.setSize(sizes.width, sizes.height);
   composer.setPixelRatio(sizes.pixelRatio);
 
+  fxaaPass.uniforms['resolution'].value.set(1 / sizes.width, 1 / sizes.height);
+
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 }
@@ -277,3 +272,13 @@ function onPointerMove(e: PointerEvent) {
 }
 
 window.addEventListener('pointermove', onPointerMove);
+
+function onPointerDown() {
+  if (INTERSECTED) {
+    outlinePass.selectedObjects = [INTERSECTED];
+  } else {
+    outlinePass.selectedObjects = [];
+  }
+}
+
+window.addEventListener('pointerdown', onPointerDown);
