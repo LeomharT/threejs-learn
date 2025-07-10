@@ -1,17 +1,32 @@
 import {
   Color,
   IcosahedronGeometry,
+  Layers,
+  Material,
   Mesh,
   MeshBasicMaterial,
+  Object3D,
   PerspectiveCamera,
   Raycaster,
+  ReinhardToneMapping,
   Scene,
-  Vector3,
+  ShaderMaterial,
+  Uniform,
+  Vector2,
   WebGLRenderer,
 } from 'three';
-import { EffectComposer, OrbitControls, RenderPass } from 'three/examples/jsm/Addons.js';
+import {
+  EffectComposer,
+  OrbitControls,
+  OutputPass,
+  RenderPass,
+  ShaderPass,
+  UnrealBloomPass,
+} from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { Pane } from 'tweakpane';
+import fragmentShader from './fragment.glsl?raw';
+import vertexShader from './vertex.glsl?raw';
 
 const el = document.querySelector('#root') as HTMLDivElement;
 
@@ -20,6 +35,17 @@ const sizes = {
   height: window.innerHeight,
   pixelratio: Math.min(2, window.devicePixelRatio),
 };
+
+const darkMaterial = new MeshBasicMaterial({ color: 'black' });
+const materials: Record<string, Material> = {};
+
+/**
+ * Layers
+ */
+
+const BLOOM_LAYER = 1;
+const layers = new Layers();
+layers.set(BLOOM_LAYER);
 
 /**
  * Basic
@@ -31,10 +57,11 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelratio);
+renderer.toneMapping = ReinhardToneMapping;
 el.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color('#1e1e1e');
+scene.background = new Color('#000000');
 
 const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 500);
 camera.position.set(0, 8, 8);
@@ -53,19 +80,45 @@ el.append(stats.dom);
 
 const raycaster = new Raycaster();
 
-const points = new Vector3();
+const mouse = new Vector2();
 
 /**
  * Post Processing
  */
 
-const composer = new EffectComposer(renderer);
-composer.setSize(sizes.width, sizes.height);
-composer.setPixelRatio(sizes.pixelratio);
+const finalComposer = new EffectComposer(renderer);
+finalComposer.setSize(sizes.width, sizes.height);
+finalComposer.setPixelRatio(sizes.pixelratio);
+
+const bloomComposer = new EffectComposer(renderer);
+// Do not render bloom effect to the screen
+bloomComposer.renderToScreen = false;
 
 const renderPass = new RenderPass(scene, camera);
 
-composer.addPass(renderPass);
+const bloomPass = new UnrealBloomPass(new Vector2(sizes.width, sizes.height), 1.5, 0.4, 0.0);
+
+const mixPass = new ShaderPass(
+  new ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      baseTexture: new Uniform(null),
+      bloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
+    },
+    defines: {},
+  }),
+  'baseTexture'
+);
+
+const outputPass = new OutputPass();
+
+bloomComposer.addPass(renderPass);
+bloomComposer.addPass(bloomPass);
+
+finalComposer.addPass(renderPass);
+finalComposer.addPass(mixPass);
+finalComposer.addPass(outputPass);
 
 /**
  * Scene
@@ -96,13 +149,50 @@ for (let i = 0; i < 50; i++) {
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 
+const folder = pane.addFolder({
+  title: '🌟 Bloom',
+});
+folder.addBinding(bloomPass, 'radius', {
+  min: 0,
+  max: 1.0,
+  step: 0.01,
+});
+folder.addBinding(bloomPass, 'strength', {
+  min: 0,
+  max: 3.0,
+  step: 0.01,
+});
+folder.addBinding(bloomPass, 'threshold', {
+  min: 0,
+  max: 1.0,
+  step: 0.01,
+});
+
 /**
  * Events
  */
 
+function darkenNoneBloomed(obj: Object3D) {
+  if (obj instanceof Mesh && layers.test(obj.layers) === false) {
+    materials[obj.uuid] = obj.material as Material;
+    obj.material = darkMaterial;
+  }
+}
+
+function restoreMaterial(obj: Object3D) {
+  if (materials[obj.uuid]) {
+    (obj as Mesh).material = materials[obj.uuid];
+    delete materials[obj.uuid];
+  }
+}
+
 function render(time: number = 0) {
   //Render
-  composer.render();
+  scene.traverse(darkenNoneBloomed);
+  bloomComposer.render();
+  scene.traverse(restoreMaterial);
+
+  finalComposer.render();
 
   // Update
   controls.update(time);
@@ -122,8 +212,8 @@ function resize() {
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelratio);
 
-  composer.setSize(sizes.width, sizes.height);
-  composer.setPixelRatio(sizes.pixelratio);
+  finalComposer.setSize(sizes.width, sizes.height);
+  finalComposer.setPixelRatio(sizes.pixelratio);
 
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
@@ -131,9 +221,18 @@ function resize() {
 
 window.addEventListener('resize', resize);
 
-function onPointerMove(e: PointerEvent) {
-  const x = (e.clientX / window.innerWidth) * 2 - 1;
-  const y = -(e.clientY / window.innerHeight) * 2 + 1;
+function onPointerDown(e: PointerEvent) {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects(scene.children);
+
+  if (intersects.length > 0) {
+    const object = intersects[0].object;
+    object.layers.toggle(BLOOM_LAYER);
+  }
 }
 
-window.addEventListener('pointermove', onPointerMove);
+window.addEventListener('pointerdown', onPointerDown);
