@@ -60,6 +60,9 @@ const sunDirection = new Vector3();
 
 const uniforms = {
   uSunDirection: new Uniform(new Vector3()),
+
+  uDayMixEdge0: new Uniform(-0.25),
+  uDayMixEdge1: new Uniform(0.5),
 };
 
 const sphereGeometry = new SphereGeometry(1, 64, 64);
@@ -99,6 +102,18 @@ pane.element.parentElement!.style.width = '380px';
 
 const earthPane = pane.addFolder({ title: '🌍 Earth' });
 earthPane.addBinding(sphereMaterial, 'wireframe');
+earthPane.addBinding(uniforms.uDayMixEdge0, 'value', {
+  min: -1,
+  max: 1,
+  step: 0.01,
+  label: 'Edge 0',
+});
+earthPane.addBinding(uniforms.uDayMixEdge1, 'value', {
+  min: -1,
+  max: 1,
+  step: 0.01,
+  label: 'Edge 1',
+});
 
 const sunPane = pane.addFolder({ title: '☀️ Sun' });
 sunPane
