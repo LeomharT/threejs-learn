@@ -1,14 +1,20 @@
 import {
   Color,
+  IcosahedronGeometry,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   Scene,
   ShaderMaterial,
   SphereGeometry,
+  Spherical,
+  Uniform,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { Pane } from 'tweakpane';
 import fragmentShader from './shader/fragment.glsl?raw';
 import vertexShader from './shader/vertex.glsl?raw';
 
@@ -49,18 +55,69 @@ el.append(stats.dom);
 /**
  * Scenes
  */
+const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
+const sunDirection = new Vector3();
 
-const uniforms = {};
+const uniforms = {
+  uSunDirection: new Uniform(new Vector3()),
+};
 
 const sphereGeometry = new SphereGeometry(1, 64, 64);
 const sphereMaterial = new ShaderMaterial({
   fragmentShader,
   vertexShader,
   uniforms,
+  wireframe: false,
 });
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
-
 scene.add(sphere);
+
+const sunGeometry = new IcosahedronGeometry(0.1, 3);
+const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
+const sun = new Mesh(sunGeometry, sunMaterial);
+
+function updateSun() {
+  // Direction
+  sunDirection.setFromSpherical(sunSpherical);
+
+  // Position
+  sun.position.copy(sunDirection).multiplyScalar(3.0);
+
+  // Uniform
+  uniforms.uSunDirection.value.copy(sunDirection);
+}
+updateSun();
+
+scene.add(sun);
+
+/**
+ * Pane
+ */
+
+const pane = new Pane({ title: '🚧🚧🚧Debug Params🚧🚧🚧' });
+pane.element.parentElement!.style.width = '380px';
+
+const earthPane = pane.addFolder({ title: '🌍 Earth' });
+earthPane.addBinding(sphereMaterial, 'wireframe');
+
+const sunPane = pane.addFolder({ title: '☀️ Sun' });
+sunPane
+  .addBinding(sunSpherical, 'phi', {
+    min: 0,
+    max: Math.PI,
+    step: 0.001,
+    label: 'Phi',
+  })
+  .on('change', updateSun);
+
+sunPane
+  .addBinding(sunSpherical, 'theta', {
+    min: -Math.PI,
+    max: Math.PI,
+    step: 0.001,
+    label: 'Theta',
+  })
+  .on('change', updateSun);
 
 /**
  * Events
