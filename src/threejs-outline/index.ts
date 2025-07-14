@@ -3,7 +3,6 @@ import {
   BoxGeometry,
   Clock,
   Color,
-  Layers,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
@@ -100,15 +99,6 @@ composer.addPass(renderPass);
 composer.addPass(fxaaPass);
 composer.addPass(outlinePass);
 composer.addPass(outputPass);
-
-/**
- * Layers
- */
-
-const BLOOM_SCENE = 1;
-
-const bloomLayer = new Layers();
-bloomLayer.set(BLOOM_SCENE);
 
 /**
  * Scenes
