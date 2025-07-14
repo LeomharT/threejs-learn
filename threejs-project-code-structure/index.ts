@@ -1,3 +1,5 @@
 import Experience from './src/Experience/Experience';
 
-const experience = new Experience();
+const experience = Experience.getInstance();
+
+console.log(experience);
