@@ -1,11 +1,18 @@
 import {
   AxesHelper,
   Color,
+  IcosahedronGeometry,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   Scene,
   ShaderMaterial,
   SphereGeometry,
+  Spherical,
+  SRGBColorSpace,
+  TextureLoader,
+  Uniform,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
@@ -23,6 +30,25 @@ const sizes = {
 };
 
 /**
+ * Loader
+ */
+
+const textureLoader = new TextureLoader();
+textureLoader.setPath('/shader-practice-earth/assets/textures/');
+
+/**
+ * Textures
+ */
+
+const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+earthDayMapTexture.anisotropy = 8;
+earthDayMapTexture.colorSpace = SRGBColorSpace;
+
+const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+earthNightMapTexture.anisotropy = 8;
+earthNightMapTexture.colorSpace = SRGBColorSpace;
+
+/**
  * Basic
  */
 
@@ -38,7 +64,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
-camera.position.set(3, 4, 2);
+camera.position.set(5, 4, 6);
 camera.lookAt(scene.position);
 scene.add(camera);
 
@@ -60,10 +86,43 @@ el.append(stats.dom);
  * Scene
  */
 
-const earthGeometry = new SphereGeometry(1.0, 32, 32);
+const sunDirection = new Vector3();
+const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
+
+const uniforms = {
+  uSunDirection: new Uniform(new Vector3()),
+
+  uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
+  uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
+
+  uEarthDayMapTexture: new Uniform(earthDayMapTexture),
+  uEarthNightMapTexture: new Uniform(earthNightMapTexture),
+};
+
+const sunGeometry = new IcosahedronGeometry(0.1, 3);
+const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
+const sun = new Mesh(sunGeometry, sunMaterial);
+
+function updateSun() {
+  // Direction
+  sunDirection.setFromSpherical(sunSpherical);
+
+  // Position
+  sun.position.copy(sunDirection).multiplyScalar(3.0);
+
+  // Uniform
+  uniforms.uSunDirection.value.copy(sunDirection);
+}
+
+updateSun();
+
+scene.add(sun);
+
+const earthGeometry = new SphereGeometry(1.0, 64, 64);
 const earthMaterial = new ShaderMaterial({
   vertexShader: earthVertexShader,
   fragmentShader: earthFragmentShader,
+  uniforms,
 });
 
 const earth = new Mesh(earthGeometry, earthMaterial);
@@ -82,6 +141,32 @@ scene.add(axesHelper);
 
 const pane = new Pane({ title: '🚧🚧🚧 Debug Params 🚧🚧🚧' });
 pane.element.parentElement!.style.width = '380px';
+
+// Sun debug
+const sunPane = pane.addFolder({ title: '☀️ Sun' });
+sunPane
+  .addBinding(sunSpherical, 'phi', {
+    step: 0.001,
+    min: 0,
+    max: Math.PI,
+  })
+  .on('change', updateSun);
+sunPane
+  .addBinding(sunSpherical, 'theta', {
+    step: 0.001,
+    min: -Math.PI,
+    max: Math.PI,
+  })
+  .on('change', updateSun);
+
+// Earth debug
+const earthPane = pane.addFolder({ title: '🌍 Earth' });
+earthPane.addBinding(uniforms.uAtmosphereDayColor, 'value', {
+  color: { type: 'float' },
+});
+earthPane.addBinding(uniforms.uAtmosphereTwilightColor, 'value', {
+  color: { type: 'float' },
+});
 
 /**
  * Events
