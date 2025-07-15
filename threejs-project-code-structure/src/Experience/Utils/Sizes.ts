@@ -10,7 +10,6 @@ export default class Sizes extends EventEmitter {
     // Resize events
     window.addEventListener('resize', () => {
       this.updateSizes();
-
       this.trigger('resize');
     });
   }

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "environmentMapTexture",
+    "type": "rgbeTexture",
+    "path": "venice_sunset_1k.hdr"
+  },
+  {
+    "name": "grassColorTexture",
+    "type": "texture",
+    "path": "dirt/color.jpg"
+  },
+  {
+    "name": "grassNormalTexture",
+    "type": "texture",
+    "path": "dirt/normal.jpg"
+  }
+]

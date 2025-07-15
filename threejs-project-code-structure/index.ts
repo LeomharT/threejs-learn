@@ -2,4 +2,5 @@ import Experience from './src/Experience/Experience';
 
 const experience = Experience.getInstance();
 
-console.log(experience);
+const root = document.querySelector('#root') as HTMLDivElement;
+root.append(experience.canvas);

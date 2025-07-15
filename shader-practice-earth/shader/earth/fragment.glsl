@@ -31,8 +31,6 @@ void main() {
         dayMix
     ).rgb;
 
-
-
     // Fresnel
     float fresnel = dot(viewDirection, normal) + 1.0;
     fresnel = max(0.0, fresnel);
