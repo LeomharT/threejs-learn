@@ -72,6 +72,9 @@ export default class Experience {
 
     // Update
     this.camera.update(this.time.elapsed);
+
+    // World
+    this.world.update();
   }
 
   private _setPane() {

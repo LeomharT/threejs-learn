@@ -1,7 +1,23 @@
-import { Texture, TextureLoader } from 'three';
+import { AnimationClip, Camera, Group, Texture, TextureLoader } from 'three';
 import { GLTFLoader, RGBELoader } from 'three/examples/jsm/Addons.js';
 import sources from '../sources.json' assert { type: 'json' };
 import EventEmitter from './EventEmitter';
+
+type GLTF = {
+  animations: AnimationClip[];
+  scene: Group;
+  scenes: Group[];
+  cameras: Camera[];
+  asset: {
+    copyright?: string | undefined;
+    generator?: string | undefined;
+    version?: string | undefined;
+    minVersion?: string | undefined;
+    extensions?: any;
+    extras?: any;
+  };
+  userData: Record<string, any>;
+};
 
 export type ResourcesLoaders = {
   gltfLoader: GLTFLoader;
@@ -13,6 +29,7 @@ export type ResourcesItems = {
   environmentMapTexture: Texture;
   grassColorTexture: Texture;
   grassNormalTexture: Texture;
+  foxModel: GLTF;
 };
 
 export default class Resources extends EventEmitter {
@@ -57,6 +74,12 @@ export default class Resources extends EventEmitter {
             this._sourceLoaded(source, data);
           });
           break;
+        }
+
+        case 'gltfModel': {
+          this.loaders.gltfLoader.load(source.path, (data) => {
+            this._sourceLoaded(source, data);
+          });
         }
 
         default:

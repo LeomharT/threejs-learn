@@ -13,5 +13,10 @@
     "name": "grassNormalTexture",
     "type": "texture",
     "path": "dirt/normal.jpg"
+  },
+  {
+    "name": "foxModel",
+    "type": "gltfModel",
+    "path": "Fox.glb"
   }
 ]

@@ -1,7 +1,7 @@
-import { BoxGeometry, Mesh, MeshStandardMaterial } from 'three';
 import Experience from '../Experience';
 import Environment from './Environment';
 import Floor from './Floor';
+import Fox from './Fox';
 
 export default class World {
   constructor(experience: Experience) {
@@ -15,12 +15,8 @@ export default class World {
       // Floor
       this.floor = new Floor(experience);
 
-      // Test
-      const testGeometry = new BoxGeometry(1, 1, 1);
-      const testMaterial = new MeshStandardMaterial();
-      const test = new Mesh(testGeometry, testMaterial);
-
-      this._experience.scene.add(test);
+      // Fox
+      this.fox = new Fox(experience);
     });
   }
 
@@ -29,4 +25,12 @@ export default class World {
   public environment: Environment;
 
   public floor: Floor;
+
+  public fox: Fox;
+
+  public update() {
+    if (this.fox) {
+      this.fox.update();
+    }
+  }
 }
