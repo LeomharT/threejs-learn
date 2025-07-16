@@ -4,7 +4,13 @@ import Experience from '../Experience';
 
 type FoxAnimation = {
   mixer: AnimationMixer;
-  action: AnimationAction;
+  action: {
+    idle: AnimationAction;
+    walking: AnimationAction;
+    running: AnimationAction;
+    current: AnimationAction;
+  };
+  play: (name: 'idle' | 'walking' | 'running' | 'current') => void;
 };
 
 export default class Fox {
@@ -44,16 +50,33 @@ export default class Fox {
     this._experience.scene.add(this._model);
   }
 
-  private _setAnimation(index: number = 0) {
+  private _setAnimation() {
     const mixer = new AnimationMixer(this._model);
-    const action = mixer.clipAction(this._modelAnimations[index]);
+    const action = {
+      idle: mixer.clipAction(this._modelAnimations[0]),
+      walking: mixer.clipAction(this._modelAnimations[1]),
+      running: mixer.clipAction(this._modelAnimations[2]),
+      current: mixer.clipAction(this._modelAnimations[0]),
+    };
+
+    const play = (name: keyof typeof action) => {
+      const newAction = this._animation.action[name];
+      const oldAction = this._animation.action.current;
+
+      newAction.reset();
+      newAction.play();
+      newAction.crossFadeFrom(oldAction, 1);
+
+      this._animation.action.current = newAction;
+    };
 
     this._animation = {
       mixer,
       action,
+      play,
     };
 
-    this._animation.action.play();
+    this._animation.play('idle');
   }
 
   private _debugPane() {
@@ -63,14 +86,21 @@ export default class Fox {
         title: 'Animation 1',
       })
       .on('click', () => {
-        this._setAnimation(0);
+        this._animation.play('idle');
       });
     this._pane
       .addButton({
         title: 'Animation 2',
       })
       .on('click', () => {
-        this._setAnimation(1);
+        this._animation.play('walking');
+      });
+    this._pane
+      .addButton({
+        title: 'Animation 3',
+      })
+      .on('click', () => {
+        this._animation.play('running');
       });
   }
 
